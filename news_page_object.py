@@ -3,12 +3,32 @@ import requests
 from bs4 import BeautifulSoup
 
 
-class HomePage:
+class NewsPage:
     def __init__(self, news_site_uid, url):
         self._config = config()['news_sites'][news_site_uid]
         self._queries = self._config['queries']
         self._html = None
         self._visit(url)
+
+    def _select(self, query_string):
+        return self._html.select(query_string)
+
+    def _visit(self, url):
+
+        try:
+            response = requests.get(url)
+
+            response.raise_for_status()
+
+            self._html = BeautifulSoup(response.text, 'html.parser')
+        except:
+            self._html = BeautifulSoup('', 'html.parser')
+
+
+class HomePage(NewsPage):
+
+    def __init__(self, news_site_uid, url):
+        super().__init__(news_site_uid, url)
 
     @property
     def article_links(self):
@@ -18,12 +38,18 @@ class HomePage:
                 link_list.append(link)
         return set(link['href'] for link in link_list)
 
-    def _select(self, query_string):
-        return self._html.select(query_string)
 
-    def _visit(self, url):
-        response = requests.get(url)
+class ArticlePage(NewsPage):
 
-        response.raise_for_status()
+    def __init__(self, news_site_uid, url):
+        super().__init__(news_site_uid, url)
 
-        self._html = BeautifulSoup(response.text, 'html.parser')
+    @property
+    def body(self):
+        result = self._select(self._queries['article_body'])
+        return result[0].text if len(result) else ''
+
+    @property
+    def title(self):
+        result = self._select(self._queries['article_title'])
+        return result[0].contents[0] if len(result) else ''
