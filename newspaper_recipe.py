@@ -26,6 +26,9 @@ def main(filename):
     df = _remove_new_lines_from_body(df)
     df = _tokenize_column(df, 'title')
     df = _tokenize_column(df, 'body')
+    df = _removing_duplicated_entries(df, 'title')
+    df = _drop_rows_with_missing_data(df)
+    _save_data(df, filename)
     return df
 
 
@@ -109,6 +112,24 @@ def _tokenize_column(df, column_name):
                                      .apply(lambda valid_word_list: len(valid_word_list))
                                      )
     return df
+
+
+def _removing_duplicated_entries(df, column_name):
+    logger.info('Removing duplicated entrie')
+    df.drop_duplicates(subset='title', keep='first', inplace=True)
+
+    return df
+
+
+def _drop_rows_with_missing_data(df):
+    logger.info('Removing entries without data')
+    return df.dropna()
+
+
+def _save_data(df, filename):
+    clean_filename = f'clean_{filename}'
+    logger.info(f'Saving data at: {clean_filename}')
+    df.to_csv(clean_filename)
 
 
 if __name__ == '__main__':
